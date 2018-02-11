@@ -1,10 +1,10 @@
 # themes
 
-lib:
-with lib;
-with import ./utils.nix lib;
-with import ./conf.nix lib;
-with import ./proplist.nix lib;
+args:
+with args.lib;
+with import ./utils.nix args;
+with import ./conf.nix args;
+with import ./proplist.nix args;
 
 let
   /* Recursively fetches a directory of templates
@@ -96,57 +96,47 @@ rec {
     }) ];
 
     function = {
-      styxLib
+      lib
     , themes ? []
-    , extraConf ? []
-    , extraEnv ? {}
+    , decls ? {}
+    , env ? {}
     }:
     let
-      themesData = map (theme: loadData { inherit theme styxLib; }) themes;
-
-      decls = styxLib.utils.merge (getAttrs "decls" themesData);
-
-      docs = styxLib.utils.merge (getAttrs "docs" themesData);
-
-      lib = styxLib.utils.merge ([ styxLib ] ++ (getAttrs "lib" themesData));
-
-      files = getAttrs "files" themesData;
+      themesData = map (theme: loadData { inherit theme lib; }) themes;
+      lib'   = merge ([ lib ] ++ (getAttrs "lib" themesData));
+      decls' = merge (getAttrs "decls" themesData);
+      docs   = merge (getAttrs "docs" themesData);
+      files  = getAttrs "files" themesData;
 
       conf' =
         let
-          isPath     = x: ( ! isAttrs x ) && styxLib.types.path.check x;
-          extraConf' = map (c: if isPath c then importApply c { inherit lib; } else c) extraConf;
-          defaults   = styxLib.utils.merge extraConf';
-          themesDefaults.theme = parseDecls { inherit decls; optionFn = o: if o ? default then o.default else null; };
-          typeCheckResult = if defaults ? theme
-                            then styxLib.conf.typeCheck decls defaults.theme
+          root = parseDecls { inherit decls; optionFn = o: if o ? default then o.default else null; };
+          theme.theme = parseDecls { decls = decls'; optionFn = o: if o ? default then o.default else null; };
+          typeCheckResult = if   theme ? theme
+                            then typeCheck decls' theme.theme
                             else null;
-        in deepSeq typeCheckResult (styxLib.utils.merge [ themesDefaults defaults ]);
+        in deepSeq typeCheckResult (merge [ theme root ]);
 
-      env = extraEnv // {
-        inherit lib;
+      env'   = env // {
+        lib       = lib';
         conf      = conf';
         templates = templates';
       };
 
       templates' =
-        let
-          templatesSet = styxLib.utils.merge (getAttrs "templates" themesData);
-        in mapAttrsRecursive (path: template:
-          template env
-        ) templatesSet;
+        let templatesSet = merge (getAttrs "templates" themesData);
+        in  mapAttrsRecursive (path: template: template env') templatesSet;
 
-      themesSet = fold (t: acc:
-        acc // { "${t.id}" = t; }
-      ) {} themesData;
-
-    in
-    {
-      inherit decls docs lib files env;
+    in {
+      inherit docs files;
+      lib       = lib';
+      decls     = decls';
+      env       = env';
       conf      = conf';
       templates = templates';
       themes    = themesData;
     };
+
   };
 
 
@@ -190,7 +180,7 @@ rec {
 
     function = {
       theme
-    , styxLib
+    , lib
     }:
       let
         confFile     = findInTheme { path = theme; } "conf.nix";
@@ -198,13 +188,9 @@ rec {
         filesDir     = findInTheme { path = theme; } "files";
         templatesDir = findInTheme { path = theme; } "templates";
         exampleFile  = findInTheme { path = theme; } "example/site.nix";
-        lib          = optionalAttrs (libFile != null) (importApply libFile { lib = styxLib; });
-        fullLib      = styxLib.utils.merge [ styxLib lib ];
-        arg          = { lib = fullLib; };
+        arg          = { inherit lib; };
         meta         = importApply (theme + "/meta.nix") arg;
       in {
-        # function library
-        inherit lib;
         # meta information
         meta  = { name = meta.id; } // meta;
         # id
@@ -212,6 +198,9 @@ rec {
         # path
         path  = toPath theme;
       }
+      # function library
+      // optionalAttrs (libFile != null) 
+           { lib = importApply libFile arg; }
       # configuration interface declarations and documentation
       // (optionalAttrs (confFile != null)
            rec { decls = importApply confFile arg; docs = mkDoc decls; })

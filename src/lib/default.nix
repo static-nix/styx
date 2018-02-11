@@ -1,21 +1,20 @@
-styx:
+{ pkgs, conf }@args:
 let
-  # For runCommand and writeText
-  nixpkgs = import <nixpkgs> {};
 
   # nixpkgs lib
-  base = nixpkgs.lib // builtins;
-  pkgs = { inherit styx; inherit (nixpkgs) runCommand writeText; };
+  base = pkgs.lib // builtins;
+
+  args' = args // { lib = base; };
 
   # Styx lib
-  data       = (import ./data.nix) base pkgs;
-  pages      = import ./pages.nix base;
-  generation = (import ./generation.nix) base pkgs;
-  template   = import ./template.nix base;
-  themes     = import ./themes.nix base;
-  utils      = import ./utils.nix base;
-  proplist   = import ./proplist.nix base;
-  conf       = import ./conf.nix base;
+  data       = import ./data.nix args';
+  pages      = import ./pages.nix args';
+  generation = import ./generation.nix args';
+  template   = import ./template.nix args';
+  themes     = import ./themes.nix args';
+  utils      = import ./utils.nix args';
+  proplist   = import ./proplist.nix args';
+  conf       = import ./conf.nix args';
 
 in
   {
