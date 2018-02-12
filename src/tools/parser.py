@@ -6,6 +6,7 @@ import re
 import sys
 
 class MarkupParser(NodeVisitor):
+
     def __init__(self, text):
         grammar = """
              main = meta? ( nix / markup )*
