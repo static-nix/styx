@@ -54,18 +54,18 @@ Multi-output derivation: out, lib, themes
   - themes/ [[file:derivation.nix::cp -r themes/* $themes][to $themes]]
 *** Questions
 **** TODO What are the `server` and `linkcheck` attributes for?
-** nixpkgs/
-*** default.nix
+** [[file:nixpkgs/][nixpkgs/]]
+*** [[file:nixpkgs/default.nix][default.nix]]
 Produces a nixpkgs that has styx set to the local development version.
 **** Remarks
 - This is removed in the rel-1.0.0 branch
 **** Questions
 ***** TODO How to actually use this?
 ***** TODO Is it used anywhere?
-** release.nix
+** [[file:release.nix][release.nix]]
 *** Questions
 **** TODO Probably the file to be used with Nixpkgs?
-** scripts/
+** [[file:scripts/][scripts/]]
 *** [[file:scripts/library-doc.nix::let][library-doc.nix]]
 A [[file:scripts/library-doc.nix::in stdenv.mkDerivation {][derivation]] producing an [[file:scripts/library-doc.nix::cp $doc build/library-generated.adoc][asciidoc .adoc]] documenting the "documentedFunctions"
 in the styx library.
@@ -89,14 +89,153 @@ Returns =callPackage src/nix/=[[*side-doc.nix][side-doc.nix]]
 Bash script which runs nix-build against the expressions in this directory.
 *** [[file:scripts/update-themes-hashes][update-themes-hashes]]
 A nix-shell / bash hybrid script which regenerates [[*versions.nix][versions.nix]]
-** src/
-*** styx.sh
-*** doc/
-*** lib/
-*** nix/
-**** side-doc.nix
-*** scaffold/
-*** tools/
+** [[file:src/][src/]]
+*** [[file:src/styx.sh][styx.sh]]
+A bash script implementing the styx cli.
+
+It implements option parsing, subcommand handling, and the commands themselves.
+**** new site
+**** new theme
+**** gen-sample-data
+**** build
+**** preview
+**** live
+**** serve
+**** linkcheck
+**** deploy
+**** doc
+**** site-doc
+**** store-path
+**** preview-theme
+**** theme-path
+*** [[file:src/doc/][doc/]]
+All the handwritten documentation in asciidoc format.
+*** [[file:src/lib/][lib/]]
+This is all of the code that ends up as styx.lib
+**** [[file:src/lib/conf.nix][conf.nix]]
+Contains functions for parsing options declarations and type checking values
+against them.
+***** [[file:src/lib/conf.nix::parseDecls = documentedFunction {][parseDecls]]
+***** [[file:src/lib/conf.nix::typeCheck = documentedFunction {][typeCheck]]
+**** [[file:src/lib/data.nix][data.nix]]
+Contains functions for the user to work with their data sources. It has
+functions for working with markdown and image files, etc.
+
+***** [[file:src/lib/data.nix::loadDir = documentedFunction {][loadDir]]
+***** [[file:src/lib/data.nix::loadFile = documentedFunction {][loadFile]]
+***** [[file:src/lib/data.nix::markdownToHtml = documentedFunction {][markdownToHtml]]
+***** [[file:src/lib/data.nix::asciidocToHtml = documentedFunction {][asciidocToHtml]]
+***** [[file:src/lib/data.nix::mkTaxonomyData = documentedFunction {][mkTaxonomyData]]
+***** [[file:src/lib/data.nix::sortTerms = documentedFunction {][sortTerms]]
+***** [[file:src/lib/data.nix::valuesNb = documentedFunction {][valuesNb]]
+***** [[file:src/lib/data.nix::groupBy = documentedFunction {][groupBy]]
+**** [[file:src/lib/default.nix::styx:][default.nix]]
+Defines an attrset with everything in styx.lib:
+- base: the original nixpkgs
+- data: ./data.nix
+- generation: ./generation.nix
+- template: ./template.nix
+- themes: ./themes.nix
+- utils: ./utils.nix
+- proplist: ./proplist.nix
+- pages: ./pages.nix
+- conf: ./conf.nix
+**** [[file:src/lib/generation.nix][generation.nix]]
+Contains functions for the user to actually perform the building of their site
+towards the end of their site.nix including =mkSite=.
+***** [[file:src/lib/generation.nix::generatePage = documentedFunction {][generatePage]]
+***** [[file:src/lib/generation.nix::mkSite = documentedFunction {][mkSite]]
+***** [[file:src/lib/generation.nix::pagesToList = documentedFunction {][pagesToList]]
+***** [[file:src/lib/generation.nix::localesToPageList = documentedFunction {][localesToPagesList]]
+**** pages.nix
+Contains functions for the user to work with pages when defining their
+=site.nix='s =site.pages= attribute.
+***** [[file:src/lib/pages.nix::mkSplitPagePath = documentedFunction {][mkSplitPagePath]]
+***** [[file:src/lib/pages.nix::mkSplitCustom = documentedFunction {][mkSplitCustom]]
+***** [[file:src/lib/pages.nix::mkSplit = documentedFunction {][mkSplit]]
+***** [[file:src/lib/pages.nix::mkMultipages = documentedFunction {][mkMultipages]]
+***** [[file:src/lib/pages.nix::mkPageList = documentedFunction {][mkPageList]]
+***** [[file:src/lib/pages.nix::mkPages = documentedFunction {][mkPages]]
+***** [[file:src/lib/pages.nix::mkTaxonomyPages = documentedFunction {][mkTaxonomyPages]]
+***** [[file:src/lib/pages.nix::mkTaxonomyPath = documentedFunction {][mkTaxonomyPath]]
+***** [[file:src/lib/pages.nix::mkTaxonomyTermPath = documentedFunction {][mkTaxonomyTermPath]]
+**** [[file:src/lib/proplist.nix][proplist.nix]]
+From the comments in the file:
+#+begin_src nix
+  # library to deal with properties (single key attribute set), and property lists
+
+  # Property example:
+  { foo = "bar"; }
+
+  # Property list example:
+  [ { foo = "bar"; } { baz = "buz"; } ]
+#+end_src
+***** [[file:src/lib/proplist.nix::propKey = documentedFunction {][propKey]]
+***** [[file:src/lib/proplist.nix::propValue = documentedFunction {][propValue]]
+***** [[file:src/lib/proplist.nix::isDefined = documentedFunction {][isDefined]]
+***** [[file:src/lib/proplist.nix::getValue = documentedFunction {][getValue]]
+***** [[file:src/lib/proplist.nix::getProp = documentedFunction {][getProp]]
+***** [[file:src/lib/proplist.nix::removeProp = documentedFunction {][removeProp]]
+***** [[file:src/lib/proplist.nix::propMap = documentedFunction {][propMap]]
+***** [[file:src/lib/proplist.nix::propFlatten = documentedFunction {][propFlatten]]
+**** [[file:src/lib/template.nix][template.nix]]
+Functions for working with and defining templates.
+***** [[file:src/lib/template.nix::documentedTemplate = documentedFunction {][documentedTemplate]]
+***** [[file:src/lib/template.nix::isDocTemplate = documentedFunction {][isDocTemplate]]
+***** [[file:src/lib/template.nix::processBlocks = documentedFunction {][processBlocks]]
+***** [[file:src/lib/template.nix::htmlAttr = documentedFunction {][htmlAttr]]
+***** [[file:src/lib/template.nix::htmlAttrs = documentedFunction {][htmlAttrs]]
+***** [[file:src/lib/template.nix::escapeHTML = documentedFunction {][escapeHTML]]
+***** [[file:src/lib/template.nix::normalTemplate = documentedFunction {][normalTemplate]]
+***** [[file:src/lib/template.nix::mapTemplate = documentedFunction {][mapTemplate]]
+***** [[file:src/lib/template.nix::mapTemplateWithIndex = documentedFunction {][mapTemplateWithIndex]]
+***** [[file:src/lib/template.nix::mod = documentedFunction {][mod]]
+***** [[file:src/lib/template.nix::isOdd = documentedFunction {][isOdd]]
+***** [[file:src/lib/template.nix::isEven = documentedFunction {][isEven]]
+***** [[file:src/lib/template.nix::parseDate = documentedFunction {][parseDate]]
+**** [[file:src/lib/themes.nix][themes.nix]]
+Functions for loading and working with themes.
+***** [[file:src/lib/themes.nix::load = documentedFunction {][load]]
+***** [[file:src/lib/themes.nix::loadData = documentedFunction {][loadData]]
+***** [[file:src/lib/themes.nix::mkDoc = documentedFunction {][mkDoc]]
+***** [[file:src/lib/themes.nix::docText = documentedFunction {][docText]]
+**** [[file:src/lib/utils.nix][utils.nix]]
+Contains various helper functions including =documentedFunction= which is used
+throughout styx.lib.
+***** [[file:src/lib/utils.nix::find = documentedFunction {][find]]
+***** [[file:src/lib/utils.nix::is = documentedFunction {][is]]
+***** [[file:src/lib/utils.nix::isExample = documentedFunction {][isExample]]
+***** [[file:src/lib/utils.nix::isDocFunction = documentedFunction {][isDocFunction]]
+***** [[file:src/lib/utils.nix::mkExample = documentedFunction {][mkExample]]
+***** [[file:src/lib/utils.nix::documentedFunction = documentedFunction' {][documentedFunction]]
+***** [[file:src/lib/utils.nix::chunksOf = documentedFunction {][chunksOf]]
+***** [[file:src/lib/utils.nix::getAttrs = documentedFunction {][getAttrs]]
+***** [[file:src/lib/utils.nix::merge = documentedFunction {][merge]]
+***** [[file:src/lib/utils.nix::sortBy = documentedFunction {][sortBy]]
+***** [[file:src/lib/utils.nix::dirContains = documentedFunction {][dirContains]]
+***** [[file:src/lib/utils.nix::setToList = documentedFunction {][setToList]]
+***** [[file:src/lib/utils.nix::importApply = documentedFunction {][importApply]]
+***** [[file:src/lib/utils.nix::prettyNix = documentedFunction {][prettyNix]]
+*** [[file:src/nix/][nix/]]
+**** [[file:src/nix/site-builder.nix][site-builder.nix]]
+Function which does =callPackage= on the siteFile.
+***** Remarks
+This is removed in rel-1.0.0
+**** [[file:src/nix/site-doc-builder.nix][site-doc-builder.nix]]
+Function which does =callPackage= on =./site-doc.nix= passing in the built site file.
+**** [[file:src/nix/site-doc.nix][side-doc.nix]]
+A [[file:src/nix/site-doc.nix::stdenv.mkDerivation rec {][derivation]] called "styx-docs" which uses asciidoctor to [[file:src/nix/site-doc.nix::asciidoctor $doc -o build/index.html][build]] the
+documentation.
+*** [[file:src/scaffold/][scaffold/]]
+**** [[file:src/scaffold/new-site/][new-site/]]
+Copied when the cli "new site" command is used.
+**** [[file:src/scaffold/sample-data/][sample-data/]]
+Copied when the cli "gen-sample-data" command is used.
+*** [[file:src/tools/][tools/]]
+**** [[file:src/tools/parser.py][parser.py]]
+Parses the header metadata of text files.
+***** Questions
+****** TODO What else does this do?
 ** tests/
 *** data/
 *** default.nix
