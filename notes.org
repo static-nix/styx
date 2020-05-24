@@ -58,7 +58,7 @@ Multi-output derivation: out, lib, themes
 *** default.nix
 Produces a nixpkgs that has styx set to the local development version.
 **** Remarks
-*- This is removed in the rel-1.0.0 branch
+- This is removed in the rel-1.0.0 branch
 **** Questions
 ***** TODO How to actually use this?
 ***** TODO Is it used anywhere?
