@@ -34,23 +34,67 @@ Let's reverse-engineer the existing Styx design.
   │   └── [[*versions.nix][versions.nix]]          attrsets denoting theme fetch details
   └── [[*VERSION][VERSION]]                   defines the styx package version
 
-** default.nix
-** derivation.nix
+** [[file:default.nix::{ pkgs ? import <nixpkgs> {} }:][default.nix]]
+Not much here. It basically just callsPackage ./derivation.nix
+** [[file:derivation.nix::{ stdenv, caddy, asciidoctor][derivation.nix]]
+The main styx package derivation.
+
+Multi-output derivation: out, lib, themes
+
+- [[file:derivation.nix::version = stdenv.lib.fileContents ./VERSION;][reads in VERSION]]
+- has a number of support [[file:derivation.nix::propagatedBuildInputs = [][propagatedBuildInputs]] like lessc, asciidoctor, etc
+- [[*[[file:derivation.nix::{ stdenv, caddy, asciidoctor\][derivation.nix]\]][installPhase]]:
+  - to [[*[[file:derivation.nix::{ stdenv, caddy, asciidoctor\][derivation.nix]\]][$out]]:
+    - [[file:derivation.nix::install -D -m 777 src/styx.sh $out/bin/styx][cli]]
+    - [[file:derivation.nix::cp -r ./* $out/share/styx-src][styx source??]]
+    - [[file:derivation.nix::cp -r src/doc/highlight $out/share/doc/styx/][styx documentation]] after [[file:derivation.nix::asciidoctor src/doc/index.adoc -o $out/share/doc/styx/index.html][building it]]
+    - [[file:derivation.nix::substituteAllInPlace $out/bin/styx][runs substitutions]] on the cli and documentation
+    - [[file:derivation.nix::cp -r src/scaffold $out/share/styx][scaffolds]]/ and [[file:derivation.nix::cp -r src/tools $out/share/styx][tools]]/
+  - src/lib/* [[file:derivation.nix::cp -r src/lib/* $lib][to $lib]]
+  - themes/ [[file:derivation.nix::cp -r themes/* $themes][to $themes]]
+*** Questions
+**** TODO What are the `server` and `linkcheck` attributes for?
 ** nixpkgs/
 *** default.nix
+Produces a nixpkgs that has styx set to the local development version.
+**** Remarks
+*- This is removed in the rel-1.0.0 branch
+**** Questions
+***** TODO How to actually use this?
+***** TODO Is it used anywhere?
 ** release.nix
+*** Questions
+**** TODO Probably the file to be used with Nixpkgs?
 ** scripts/
-*** library-doc.nix
-*** run-tests
-*** screen.js
-*** themes-doc.nix
-*** update-doc
-*** update-themes-hashes
+*** [[file:scripts/library-doc.nix::let][library-doc.nix]]
+A [[file:scripts/library-doc.nix::in stdenv.mkDerivation {][derivation]] producing an [[file:scripts/library-doc.nix::cp $doc build/library-generated.adoc][asciidoc .adoc]] documenting the "documentedFunctions"
+in the styx library.
+
+There a bunch of crunchy code here, likely to parse the structure of the
+"documentedFunctions".
+
+Probably a target for some refactoring/documenting.
+
+*** [[file:scripts/run-tests][run-tests]]
+Bash script which [[file:scripts/run-tests::if nix-build "$testsDir" --no-out-link; then][builds the derivations in]] [[*tests/][tests/]]
+
+*** [[file:scripts/screen.js][screen.js]]
+**** Questions
+***** TODO What is this?
+*** [[file:scripts/themes-doc.nix][themes-doc.nix]]
+Generates the documentation for themes.
+
+Returns =callPackage src/nix/=[[*side-doc.nix][side-doc.nix]]
+*** [[file:scripts/update-doc][update-doc]]
+Bash script which runs nix-build against the expressions in this directory.
+*** [[file:scripts/update-themes-hashes][update-themes-hashes]]
+A nix-shell / bash hybrid script which regenerates [[*versions.nix][versions.nix]]
 ** src/
 *** styx.sh
 *** doc/
 *** lib/
 *** nix/
+**** side-doc.nix
 *** scaffold/
 *** tools/
 ** tests/
