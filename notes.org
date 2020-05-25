@@ -3,7 +3,8 @@
 Let's reverse-engineer the existing Styx design.
 
 
-* Repoistory Overview
+* master
+** Repoistory Overview
   .
   ├── [[*default.nix][default.nix]]               callPackage ./derivation.nix
   ├── [[*derivation.nix][derivation.nix]]            actual package derivation
@@ -245,3 +246,74 @@ Parses the header metadata of text files.
 *** revs.csv
 *** versions.nix
 ** VERSION
+
+* rel-1.0.0
+** Changes
+*** VERSION
+- bumped from 0.7.1 -> 1.0.0-dev
+*** derivation.nix
+- file, lessc, sass, multimarkdown removed from:
+  - derviation args
+  - propagatedBuildInputs
+- all propagatedBuildInputs removed
+- $lib output removed
+- src/default.nix copied to $out/
+- src/styx-config.nix copied to $out/
+- src/nix/ copied to $out/share/nix
+- src/lib/* copied to $out/lib
+*** src/default.nix
+New file. Is the top-level expression representing =styx= passed to site.nix.
+
+Exports attributes:
+- =lib=: src/lib.nix
+- =conf=: parsed option declarations from =styx-config.nix=
+- =decls=: loaded option declarations from =styx-config.nix=
+- =themes=: loaded themes returned from =lib.themes.load=
+*** src/lib/conf.nix
+=mergeConfgs= function added
+*** src/lib/data.nix
+- =markupFiles= and =markupExts= now calculated from =conf.lib.data.markup=
+  - added to =supportedFiles= and =supportedExts=
+- =parseImageFile= removed
+- various hardcoded things moved to =conf.lib.*= like commands for parsing
+  markup, etc.
+- =markdownToHtml= removed
+- =asciidocToHtml= removed
+*** src/lib/generation.nix
+- instead of packages being passed in, they are accessed from =pkgs= argument
+*** src/lib/theme.nix
+A number of refactors but nothing super interesting.
+**** Help
+***** TODO Someone else to review this code to help understand it
+*** src/lib/utils.nix
+- added =isPath=
+*** src/nix/site-builder.nix
+Deleted.
+*** src/nix/site-doc-builder.nix
+No more =callPackage=, just a simple import of the siteFile.
+*** src/nix/site-doc.nix
+mostly just some style refactors
+*** src/scaffold/new-site/default.nix
+Deleted.
+*** src/scaffold/new-site/site.nix
+- takes pkgs instead of styx
+- styx is initialized via =import pkgs.styx { ... }=
+- raising attributes is done via the intialized styx variable rather than
+  "themesData
+*** src/styx-config.nix
+New file. Defines all of the configuration declarations for styx.nix
+**** Structure Overview
+***** data
+****** markup
+******* asciidoc
+******* markdown
+****** parser
+*** src/styx.sh
+- Builder functions now pass the site file directly to nix-build.
+- Some paths have been updated.
+
+
+
+
+
+
